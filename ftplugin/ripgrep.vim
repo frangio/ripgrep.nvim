@@ -9,4 +9,4 @@ setlocal foldlevel=2
 
 setlocal nomodifiable
 
-nnoremap <buffer> <Return> <Cmd>call ripgrep#go_to_match()<CR>
+nnoremap <buffer> <Return> :call ripgrep#go_to_match()<CR>
