@@ -19,6 +19,11 @@ function! ripgrep#highlight_clear()
   endif
 endfunction
 
+function! ripgrep#highlight_reset()
+  call ripgrep#highlight_clear()
+  call ripgrep#highlight_apply()
+endfunction
+
 function! ripgrep#go_to_match()
   let l:line = matchstr(getline('.'), '^\d\+')
   let l:file_name_line = search('\%(\%^\|^\n\)\zs', 'bn')

@@ -20,8 +20,7 @@ function! s:BufReadCmd(buffer, file)
 endfunction
 
 function! s:BufWinEnter()
-  call ripgrep#highlight_clear()
-  call ripgrep#highlight_apply()
+  call ripgrep#highlight_reset()
 endfunction
 
 function! s:WinNew()
