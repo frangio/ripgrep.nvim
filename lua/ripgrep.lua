@@ -2,19 +2,24 @@ local dkjson = require('dkjson')
 local api = vim.api
 local loop = vim.loop
 
+local buffers = {}
+
 local Buffer = {}
 Buffer.__index = Buffer
 
-function init_buffer(buffer, query)
-  Buffer.new(buffer, query):init()
+function get_buffer(buffer)
+  if buffers[buffer] == nil then
+    buffers[buffer] = Buffer.new(buffer)
+  end
+  return buffers[buffer]
 end
 
 function setup_window(window)
   api.nvim_win_set_option(window, 'number', false)
 end
 
-function Buffer.new(buffer, query)
-  local self = { buffer = buffer, query = query, data = {} }
+function Buffer.new(buffer)
+  local self = {buffer = buffer, matches = {}}
   setmetatable(self, Buffer)
   return self
 end
@@ -41,7 +46,8 @@ function Buffer:init()
 end
 
 function Buffer:get_pattern()
-  return self.query:match("rg://(.*)")
+  local query = api.nvim_buf_get_name(self.buffer)
+  return query:match("rg://(.*)")
 end
 
 function Buffer:append(lines)
@@ -115,6 +121,6 @@ function split_lines(str)
 end
 
 return {
-  init_buffer = init_buffer,
+  get_buffer = get_buffer,
   setup_window = setup_window,
 }
