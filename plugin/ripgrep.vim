@@ -7,7 +7,7 @@ augroup ripgrep
 augroup end
 
 function! s:init_buffer(buffer)
-  call luaeval('ripgrep.get_buffer(_A):init()', a:buffer)
+  call luaeval('ripgrep.get_buffer(_A):init()', str2nr(a:buffer))
 endfunction
 
 function! s:setup_window(window)
