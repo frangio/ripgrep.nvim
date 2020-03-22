@@ -60,8 +60,12 @@ function Buffer:append(lines)
 end
 
 function Buffer:begin(data)
-  local line = self:append({data.path.text})
-  api.nvim_buf_add_highlight(self.bufer, -1, 'rgFileName', line, 0, -1)
+  local title = {data.path.text}
+  if self.appended then
+    table.insert(title, 1, '')
+  end
+  local line = self:append(title)
+  api.nvim_buf_add_highlight(self.buffer, -1, 'rgFileName', line, 0, -1)
 end
 
 function Buffer:match(data)
@@ -69,10 +73,6 @@ function Buffer:match(data)
   for i, m in ipairs(data.submatches) do
     api.nvim_buf_add_highlight(self.bufer, -1, 'rgMatch', line, m.start, m['end'])
   end
-end
-
-Buffer['end'] = function (self)
-  self:append({''})
 end
 
 function spawn(cmd, args, callback)
