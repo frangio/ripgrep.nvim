@@ -51,6 +51,15 @@ function Buffer:init()
   end)
 end
 
+function Buffer:go_to_match(window)
+  local cur_line, cur_col = unpack(api.nvim_win_get_cursor(window))
+  local match = self.matches[cur_line - 1]
+  if match then
+    local pos = match.line_number .. 'G' .. (cur_col + 1) .. '|'
+    api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. match.path.text)
+  end
+end
+
 function Buffer:get_pattern()
   local query = api.nvim_buf_get_name(self.buffer)
   return query:match("rg://(.*)")
@@ -79,6 +88,8 @@ function Buffer:match(data)
   for i, m in ipairs(data.submatches) do
     api.nvim_buf_add_highlight(self.buffer, -1, 'rgMatch', line, m.start, m['end'])
   end
+  data.line = line
+  self.matches[line] = data
 end
 
 function spawn(cmd, args, callback)
