@@ -9,7 +9,7 @@ function! s:init_buffer(buffer)
 endfunction
 
 function! s:setup_window(window)
-  call luaeval('require("ripgrep").setup_window(_A.window)', a:)
+  call luaeval('require("ripgrep").setup_window(_A)', a:window)
 endfunction
 
 command! -nargs=? Rg exec <q-mods> 'new rg://' . <q-args>
