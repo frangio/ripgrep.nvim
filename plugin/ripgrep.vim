@@ -1,3 +1,5 @@
+lua require'ripgrep'
+
 augroup ripgrep
   autocmd!
   autocmd BufReadCmd  rg://*  call <SID>init_buffer(expand("<abuf>"))
@@ -5,11 +7,11 @@ augroup ripgrep
 augroup end
 
 function! s:init_buffer(buffer)
-  call luaeval('require("ripgrep").get_buffer(_A):init()', a:buffer)
+  call luaeval('ripgrep.get_buffer(_A):init()', a:buffer)
 endfunction
 
 function! s:setup_window(window)
-  call luaeval('require("ripgrep").setup_window(_A)', a:window)
+  call luaeval('ripgrep.setup_window(_A)', a:window)
 endfunction
 
 command! -nargs=? Rg exec <q-mods> 'new rg://' . <q-args>

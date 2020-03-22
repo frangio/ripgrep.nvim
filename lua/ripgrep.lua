@@ -1,3 +1,9 @@
+if ripgrep then
+  return
+end
+
+ripgrep = {}
+
 local dkjson = require('dkjson')
 local api = vim.api
 local loop = vim.loop
@@ -7,14 +13,14 @@ local buffers = {}
 local Buffer = {}
 Buffer.meta = {__index = Buffer}
 
-function get_buffer(buffer)
+function ripgrep.get_buffer(buffer)
   if buffers[buffer] == nil then
     buffers[buffer] = Buffer.new(buffer)
   end
   return buffers[buffer]
 end
 
-function setup_window(window)
+function ripgrep.setup_window(window)
   api.nvim_win_set_option(window, 'number', false)
 end
 
@@ -119,8 +125,3 @@ function split_lines(str)
   end
   return lines
 end
-
-return {
-  get_buffer = get_buffer,
-  setup_window = setup_window,
-}
