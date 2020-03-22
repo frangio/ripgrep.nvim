@@ -5,7 +5,7 @@ local loop = vim.loop
 local buffers = {}
 
 local Buffer = {}
-Buffer.__index = Buffer
+Buffer.meta = {__index = Buffer}
 
 function get_buffer(buffer)
   if buffers[buffer] == nil then
@@ -20,7 +20,7 @@ end
 
 function Buffer.new(buffer)
   local self = {buffer = buffer, matches = {}}
-  setmetatable(self, Buffer)
+  setmetatable(self, Buffer.meta)
   return self
 end
 
