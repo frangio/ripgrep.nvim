@@ -17,6 +17,4 @@ endfunction
 call s:hi('rgFileName',    5, [])
 call s:hi('rgMatch',       1, ['bold'])
 
-" highlight default link FoldColumn LineNr
-
 let b:current_syntax = 'ripgrep'
