@@ -14,8 +14,8 @@ function! s:hi(group, color, attrs)
         \ 'guifg=' . get(g:, 'terminal_color_' . a:color)
 endfunction
 
-call s:hi('rgFileName',   13, [])
-call s:hi('rgMatch',       9, ['bold'])
+call s:hi('rgFileName',    5, [])
+call s:hi('rgMatch',       1, ['bold'])
 
 " highlight default link FoldColumn LineNr
 
