@@ -55,17 +55,12 @@ function Buffer:set_options()
 end
 
 function Buffer:spawn()
-  spawn('rg', {'--json', '--', self:get_pattern()}, function (err, output)
-    local len = output:len()
-    local pos = 1
-    while pos <= len do
-      local obj, err
-      obj, pos = dkjson.decode(output, pos)
-      if obj and self[obj.type] then
-        self[obj.type](self, obj.data)
-      end
+  spawn('rg', {'--json', '--', self:get_pattern()}, each_line(function (line)
+    local obj = dkjson.decode(line)
+    if self[obj.type] then
+      self[obj.type](self, obj.data)
     end
-  end)
+  end))
 end
 
 function Buffer:go_to_match(window)
@@ -111,22 +106,19 @@ end
 
 function spawn(cmd, args, callback)
   local handle
-  local chunks = {}
   local stdout = loop.new_pipe(false)
 
   function on_read(err, chunk)
     if err then
-      vim.schedule(function () callback(err) end)
-    elseif chunk then
-      table.insert(chunks, chunk)
+      error(err)
     end
+    vim.schedule(function () callback(chunk) end)
   end
 
   function on_exit(code, signal)
     stdout:read_stop()
     stdout:close()
     handle:close()
-    vim.schedule(function () callback(nil, table.concat(chunks)) end)
   end
 
   handle = loop.spawn(cmd, {
@@ -152,4 +144,25 @@ function split_lines(str)
     end
   end
   return lines
+end
+
+function each_line(callback)
+  local feed
+  feed = coroutine.wrap(function (chunk)
+    local line = ''
+    local cursor = 1
+    while chunk do
+      local newline = chunk:find('\n', cursor)
+      line = line .. chunk:sub(cursor, newline)
+      if newline then
+        cursor = newline + 1
+        callback(line)
+        line = ''
+      else
+        chunk = coroutine.yield()
+        cursor = 1
+      end
+    end
+  end)
+  return feed
 end
