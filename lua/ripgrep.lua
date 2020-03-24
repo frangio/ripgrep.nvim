@@ -96,6 +96,9 @@ function Buffer:begin(data)
 end
 
 function Buffer:match(data)
+  if data.lines.bytes then
+    return
+  end
   local line = self:append(split_lines(data.lines.text))
   for i, m in ipairs(data.submatches) do
     api.nvim_buf_add_highlight(self.buffer, -1, 'rgMatch', line, m.start, m['end'])
