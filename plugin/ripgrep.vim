@@ -14,4 +14,5 @@ function! s:setup_window(window)
   call luaeval('ripgrep.setup_window(_A)', a:window)
 endfunction
 
-command! -nargs=? Rg exec <q-mods> 'new rg://' . <q-args>
+command! -nargs=? Rg exec 'edit rg:///' . <q-args>
+command! -nargs=? Rgi exec 'edit rg://-i/' . <q-args>
