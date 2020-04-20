@@ -56,7 +56,8 @@ end
 
 function Buffer:spawn()
   local options, pattern = self:parse()
-  spawn('rg', {'--json', unpack(options), '--', pattern}, each_line(function (line)
+  local args = vim.tbl_flatten({'--json', options, '--', pattern})
+  spawn('rg', args, each_line(function (line)
     local obj = dkjson.decode(line)
     if self[obj.type] then
       self[obj.type](self, obj.data)
@@ -76,7 +77,11 @@ end
 function Buffer:parse()
   local query = api.nvim_buf_get_name(self.buffer)
   local options, pattern = query:match("rg://(.*)/(.*)")
-  options = vim.split(options, ' ')
+  if options:len() == 0 then
+    options = {}
+  else
+    options = vim.split(options, ' ')
+  end
   return options, pattern
 end
 
