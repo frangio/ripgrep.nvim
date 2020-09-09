@@ -16,3 +16,4 @@ endfunction
 
 command! -nargs=? Rg exec 'edit rg:///' . <q-args>
 command! -nargs=? Rgi exec 'edit rg://-i/' . <q-args>
+command! -nargs=? Rgw exec 'edit rg://-w/' . <q-args>
