@@ -26,10 +26,14 @@ end
 
 local Buffer = class()
 
-function ripgrep.get_buffer(buffer)
-  if buffers[buffer] == nil then
-    buffers[buffer] = Buffer.new(buffer)
+function ripgrep.init_buffer(buffer)
+  if buffers[buffer] ~= nil then
+    buffers[buffer]:close()
   end
+  buffers[buffer] = Buffer.new(buffer)
+end
+
+function ripgrep.get_buffer(buffer)
   return buffers[buffer]
 end
 
@@ -46,6 +50,11 @@ function Buffer:initialize(buffer)
   self:spawn()
 end
 
+function Buffer:close()
+  loop.read_stop(self.child_stdout)
+  loop.process_kill(self.child, 'SIGTERM')
+end
+
 function Buffer:set_options()
   api.nvim_buf_set_option(self.buffer, 'filetype', 'ripgrep')
   api.nvim_buf_set_option(self.buffer, 'buftype', 'nowrite')
@@ -57,7 +66,7 @@ end
 function Buffer:spawn()
   local options, pattern = self:parse()
   local args = vim.tbl_flatten({'--json', options, '--', pattern})
-  spawn('rg', args, each_line(function (line)
+  self.child, self.child_stdout = spawn('rg', args, each_line(function (line)
     local obj = dkjson.decode(line)
     if self[obj.type] then
       self[obj.type](self, obj.data)
@@ -144,6 +153,8 @@ function spawn(cmd, args, callback)
   }, on_exit)
 
   loop.read_start(stdout, on_read)
+
+  return handle, stdout
 end
 
 function split_lines(str)
