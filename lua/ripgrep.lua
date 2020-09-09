@@ -82,6 +82,9 @@ function Buffer:parse()
   else
     options = vim.split(options, ' ')
   end
+  if pattern:len() == 0 then
+    error('empty pattern')
+  end
   return options, pattern
 end
 
