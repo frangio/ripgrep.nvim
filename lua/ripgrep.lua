@@ -85,7 +85,7 @@ end
 
 function Buffer:parse()
   local query = api.nvim_buf_get_name(self.buffer)
-  local options, pattern = query:match("rg://(.*)/(.*)")
+  local options, pattern = query:match("rg://([^/]*)/(.*)")
   if options:len() == 0 then
     options = {}
   else
