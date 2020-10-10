@@ -34,7 +34,7 @@ function ripgrep.init_buffer(buffer)
 end
 
 function ripgrep.get_buffer(buffer)
-  return buffers[buffer]
+  return buffers[buffer] or error('not an active ripgrep buffer!')
 end
 
 function ripgrep.setup_window(window)
