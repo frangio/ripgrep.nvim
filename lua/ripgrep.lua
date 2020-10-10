@@ -51,8 +51,7 @@ function Buffer:initialize(buffer)
 end
 
 function Buffer:close()
-  loop.read_stop(self.child_stdout)
-  loop.process_kill(self.child, 'SIGTERM')
+  self.process.kill()
 end
 
 function Buffer:set_options()
@@ -66,7 +65,7 @@ end
 function Buffer:spawn()
   local options, pattern = self:parse()
   local args = vim.tbl_flatten({'--json', options, '--', pattern})
-  self.child, self.child_stdout = spawn('rg', args, each_line(function (line)
+  self.process = spawn('rg', args, each_line(function (line)
     local obj = dkjson.decode(line)
     if self[obj.type] then
       self[obj.type](self, obj.data)
@@ -131,13 +130,12 @@ function Buffer:match(data)
 end
 
 function spawn(cmd, args, callback)
+  local reading = false
   local handle
   local stdout = loop.new_pipe(false)
 
   function on_read(err, chunk)
-    if err then
-      error(err)
-    end
+    if err then error(err) end
     vim.schedule(function () callback(chunk) end)
   end
 
@@ -147,14 +145,31 @@ function spawn(cmd, args, callback)
     handle:close()
   end
 
+  local process = {}
+
+  function process.read_resume()
+    if not reading then
+      loop.read_start(stdout, on_read)
+    end
+  end
+
+  function process.read_pause()
+    loop.read_stop(stdout)
+  end
+
+  function process.kill()
+    loop.read_stop(stdout)
+    loop.process_kill(handle, 'SIGTERM')
+  end
+
   handle = loop.spawn(cmd, {
     args = args,
     stdio = {nil, stdout, nil},
   }, on_exit)
 
-  loop.read_start(stdout, on_read)
+  process.read_resume()
 
-  return handle, stdout
+  return process
 end
 
 function split_lines(str)
