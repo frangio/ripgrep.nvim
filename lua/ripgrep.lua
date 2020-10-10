@@ -37,17 +37,19 @@ function ripgrep.get_buffer(buffer)
   return buffers[buffer] or error('not an active ripgrep buffer!')
 end
 
-function ripgrep.setup_window(window)
-  api.nvim_win_set_option(window, 'number', false)
-end
-
 function Buffer:initialize(buffer)
   self.buffer = buffer
   self.matches = {}
   self.done_callbacks = {}
+  self.windows = {}
 
   self:set_options()
   self:spawn()
+end
+
+function Buffer:setup_window(window)
+  api.nvim_win_set_option(window, 'number', false)
+  table.insert(self.windows, window)
 end
 
 function Buffer:close()
@@ -65,12 +67,51 @@ end
 function Buffer:spawn()
   local options, pattern = self:parse()
   local args = vim.tbl_flatten({'--json', options, '--', pattern})
-  self.process = spawn('rg', args, each_line(function (line)
+  local line_callback = each_line(function (line)
     local obj = dkjson.decode(line)
     if self[obj.type] then
       self[obj.type](self, obj.data)
     end
-  end))
+  end)
+  self.process = spawn('rg', args, function (chunk)
+    vim.schedule(function () self:pause_or_resume() end)
+    line_callback(chunk)
+  end)
+end
+
+function Buffer:get_max_cur_line()
+  local max_cur_line = -1
+  local win_height = 0
+  for idx, winid in pairs(self.windows) do
+    local success, cursor = pcall(api.nvim_win_get_cursor, window)
+    if not success then
+      -- assume window doesn't exist anymore
+      self.windows[idx] = nil
+    else
+      local cur_line = unpack(cursor)
+      if cur_line > max_cur_line then
+        max_cur_line = cur_line
+        win_height = api.nvim_win_get_height(window)
+      end
+    end
+  end
+  return max_cur_line, win_height
+end
+
+function Buffer:pause_or_resume(window)
+  local cur_line, win_height
+  if window then
+    cur_line = unpack(api.nvim_win_get_cursor(window))
+    win_height = api.nvim_win_get_height(window)
+  else
+    cur_line, win_height = self:get_max_cur_line()
+  end
+  local line_count = api.nvim_buf_line_count(self.buffer)
+  if cur_line > line_count - win_height then
+    self.process.read_resume()
+  else
+    self.process.read_pause()
+  end
 end
 
 function Buffer:go_to_match(window)
