@@ -244,6 +244,12 @@ function each_line(callback)
         cursor = 1
       end
     end
+    while true do
+      if chunk then
+        error('unexpected chunk after end of stream')
+      end
+      coroutine.yield()
+    end
   end)
   return feed
 end
