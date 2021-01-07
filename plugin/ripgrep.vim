@@ -24,6 +24,6 @@ function! s:pause_or_resume(buffer, window)
   call luaeval('ripgrep.get_buffer(_A.buffer):pause_or_resume(_A.window)', l:)
 endfunction
 
-command! -nargs=? Rg exec 'edit rg:///' . <q-args>
-command! -nargs=? Rgi exec 'edit rg://-i/' . <q-args>
-command! -nargs=? Rgw exec 'edit rg://-w/' . <q-args>
+command! -nargs=? Rgrep exec 'edit rg:///' . <q-args>
+command! -nargs=? Rgrepi exec 'edit rg://-i/' . <q-args>
+command! -nargs=? Rgrepw exec 'edit rg://-w/' . <q-args>
