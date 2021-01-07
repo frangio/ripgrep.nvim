@@ -26,6 +26,12 @@ end
 
 local Buffer = class()
 
+function ripgrep.go_to_match()
+  local bufnr = api.nvim_get_current_buf()
+  local window = api.nvim_get_current_win()
+  ripgrep.get_buffer(bufnr):go_to_match(window)
+end
+
 function ripgrep.init_buffer(buffer)
   if buffers[buffer] ~= nil then
     buffers[buffer]:close()
