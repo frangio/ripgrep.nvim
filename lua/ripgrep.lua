@@ -56,11 +56,13 @@ end
 function Buffer:on_write()
   local changes = {}
 
-  local message = "Are you sure you wold like to overwrite the following files:\n"
+  local message = "Are you sure you would like to overwrite the following files?\n"
   local filenames = {}
+
   for ind, match in pairs(self.matches) do
     local filename = match.path
     local lines, new_text = self:make_change(match)
+
     if lines then
       table.insert(changes, {
         filename = filename,
@@ -68,19 +70,23 @@ function Buffer:on_write()
         match_ind = ind,
         new_text = new_text
       })
+
       if not vim.tbl_contains(filenames, filename) then
         table.insert(filenames, filename)
       end
     end
   end
+
   if #changes > 0 then
     message = message .. table.concat(filenames, " ")
     print(message .. " (y/N) ")
+
     local input = vim.fn.nr2char(vim.fn.getchar()):lower()
     if input == 'y' then
       for _, change in ipairs(changes) do
         vim.fn.writefile(change.lines, change.filename)
         self.matches[change.match_ind].text = change.new_text
+
         api.nvim_buf_set_option(self.buffer, 'modified', false)
       end
     end
