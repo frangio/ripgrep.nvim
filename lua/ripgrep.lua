@@ -8,7 +8,7 @@ local dkjson = require('dkjson')
 local api = vim.api
 local loop = vim.loop
 
-local buffers = {}
+buffers = {}
 
 function class()
   local klass = {}
