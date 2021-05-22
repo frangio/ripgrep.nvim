@@ -26,8 +26,8 @@ function! s:pause_or_resume(buffer, window)
 endfunction
 
 function! s:on_write(buffer, window)
-    let l:buffer = str2nr(a:buffer)
-    call luaeval('ripgrep.get_buffer(_A.buffer):on_write()', l:)
+  let l:buffer = str2nr(a:buffer)
+  call luaeval('ripgrep.get_buffer(_A.buffer):on_write()', l:)
 endfunction
 
 command! -nargs=? Rg exec 'edit rg:///' . <q-args>
