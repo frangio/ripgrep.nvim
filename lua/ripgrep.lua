@@ -49,7 +49,60 @@ end
 
 function Buffer:setup_window(window)
   api.nvim_win_set_option(window, 'number', false)
+  api.nvim_win_set_option(window, 'relativenumber', false)
   table.insert(self.windows, window)
+end
+
+function Buffer:on_write()
+    local changes = {}
+
+    local message = "Are you sure you wold like to overwrite the following files:\n"
+    local filenames = {}
+    for ind, match in pairs(self.matches) do
+        local filename = match.path
+        local lines, new_text = self:make_change(match)
+        if lines then
+            table.insert(changes, {
+                filename = filename,
+                lines = lines,
+                match_ind = ind,
+                new_text = new_text
+            })
+            if not vim.tbl_contains(filenames, filename) then
+                table.insert(filenames, filename)
+            end
+        end
+    end
+    if #changes > 0 then
+        message = message .. table.concat(filenames, " ")
+        print(message .. " (y/N) ")
+        local input = vim.fn.nr2char(vim.fn.getchar()):lower()
+        if input == 'y' then
+            for _, change in ipairs(changes) do
+                vim.fn.writefile(change.lines, change.filename)
+                self.matches[change.match_ind].text = change.new_text
+                api.nvim_buf_set_option(self.buffer, 'modified', false)
+            end
+        end
+    end
+end
+
+function Buffer:make_change(match)
+    local original = match.text
+    original = string.sub(original, 1, #original - 1)
+    local changed = vim.fn.getline(match.line + 1)
+
+    if original ~= changed then
+        local lines = vim.fn.readfile(match.path)
+        lines[match.line_number] = changed
+        -- local change_line = before[match.line_number]
+
+        return lines, changed
+
+        --[[ local new_fname = "copy." .. match.path
+
+        vim.fn.writefile(lines, new_fname) ]]
+    end
 end
 
 function Buffer:close()
@@ -58,10 +111,11 @@ end
 
 function Buffer:set_options()
   api.nvim_buf_set_option(self.buffer, 'filetype', 'ripgrep')
-  api.nvim_buf_set_option(self.buffer, 'buftype', 'nowrite')
+  api.nvim_buf_set_option(self.buffer, 'buftype', 'acwrite')
+  -- api.nvim_buf_set_option(self.buffer, 'buftype', 'nowrite')
   api.nvim_buf_set_option(self.buffer, 'bufhidden', 'hide')
   api.nvim_buf_set_option(self.buffer, 'swapfile', false)
-  api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+  -- api.nvim_buf_set_option(self.buffer, 'modifiable', true)
 end
 
 function Buffer:spawn()
@@ -137,9 +191,10 @@ end
 function Buffer:append(lines)
   local start = self.appended and -1 or -2
   self.appended = true
-  api.nvim_buf_set_option(self.buffer, 'modifiable', true)
+  -- api.nvim_buf_set_option(self.buffer, 'modifiable', true)
   api.nvim_buf_set_lines(self.buffer, start, -1, true, lines)
-  api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+  -- api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+  api.nvim_buf_set_option(self.buffer, 'modified', false)
   return api.nvim_buf_line_count(self.buffer) - 1
 end
 
@@ -164,6 +219,7 @@ function Buffer:match(data)
     line = line,
     line_number = data.line_number,
     path = data.path.text,
+    text = data.lines.text,
   }
 end
 
