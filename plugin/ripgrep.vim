@@ -1,5 +1,3 @@
-lua require'ripgrep'
-
 augroup ripgrep
   autocmd!
   autocmd BufReadCmd  rg://*  call <SID>init_buffer(expand("<abuf>"))
@@ -10,24 +8,24 @@ augroup end
 
 function! s:init_buffer(buffer)
   let l:buffer = str2nr(a:buffer)
-  call luaeval('ripgrep.init_buffer(_A.buffer)', l:)
+  call luaeval('require("ripgrep").init_buffer(_A.buffer)', l:)
 endfunction
 
 function! s:setup_window(buffer, window)
   let l:buffer = str2nr(a:buffer)
   let l:window = a:window
-  call luaeval('ripgrep.get_buffer(_A.buffer):setup_window(_A.window)', l:)
+  call luaeval('require("ripgrep").get_buffer(_A.buffer):setup_window(_A.window)', l:)
 endfunction
 
 function! s:pause_or_resume(buffer, window)
   let l:buffer = str2nr(a:buffer)
   let l:window = a:window
-  call luaeval('ripgrep.get_buffer(_A.buffer):pause_or_resume(_A.window)', l:)
+  call luaeval('require("ripgrep").get_buffer(_A.buffer):pause_or_resume(_A.window)', l:)
 endfunction
 
 function! s:on_write(buffer)
   let l:buffer = str2nr(a:buffer)
-  call luaeval('ripgrep.get_buffer(_A.buffer):on_write()', l:)
+  call luaeval('require("ripgrep").get_buffer(_A.buffer):on_write()', l:)
 endfunction
 
 command! -nargs=? Rg exec 'edit rg:///' . <q-args>

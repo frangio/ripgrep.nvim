@@ -1,16 +1,11 @@
-if ripgrep then
-  return
-end
-
-ripgrep = {}
+local ripgrep = {}
 
 local dkjson = require('dkjson')
 local api = vim.api
 local loop = vim.loop
+ripgrep.buffers = {}
 
-buffers = {}
-
-function class()
+function ripgrep.class()
   local klass = {}
   local meta = {__index = klass}
   function klass.new(...)
@@ -24,17 +19,17 @@ function class()
   return klass
 end
 
-local Buffer = class()
+local Buffer = ripgrep.class()
 
 function ripgrep.init_buffer(buffer)
-  if buffers[buffer] ~= nil then
-    buffers[buffer]:close()
+  if ripgrep.buffers[buffer] ~= nil then
+    ripgrep.buffers[buffer]:close()
   end
-  buffers[buffer] = Buffer.new(buffer)
+  ripgrep.buffers[buffer] = Buffer.new(buffer)
 end
 
 function ripgrep.get_buffer(buffer)
-  return buffers[buffer] or error('not an active ripgrep buffer!')
+  return ripgrep.buffers[buffer] or error('not an active ripgrep buffer!')
 end
 
 function Buffer:initialize(buffer)
@@ -306,3 +301,5 @@ function each_line(callback)
   end)
   return feed
 end
+
+return ripgrep
