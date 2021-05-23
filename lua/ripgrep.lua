@@ -5,7 +5,51 @@ local api = vim.api
 local loop = vim.loop
 ripgrep.buffers = {}
 
-function ripgrep.class()
+local function split_lines(str)
+  local lines = {}
+  local len = str:len()
+  local pos = 1
+  while pos <= len do
+    local b, e = str:find("\r?\n", pos)
+    if b then
+      table.insert(lines, str:sub(pos, b - 1))
+      pos = e + 1
+    else
+      table.insert(lines, str:sub(pos))
+      break
+    end
+  end
+  return lines
+end
+
+local function each_line(callback)
+  local feed
+  feed = coroutine.wrap(function (chunk)
+    local line = ''
+    local cursor = 1
+    while chunk do
+      local newline = chunk:find('\n', cursor)
+      line = line .. chunk:sub(cursor, newline)
+      if newline then
+        cursor = newline + 1
+        callback(line)
+        line = ''
+      else
+        chunk = coroutine.yield()
+        cursor = 1
+      end
+    end
+    while true do
+      if chunk then
+        error('unexpected chunk after end of stream')
+      end
+      coroutine.yield()
+    end
+  end)
+  return feed
+end
+
+local function class()
   local klass = {}
   local meta = {__index = klass}
   function klass.new(...)
@@ -19,7 +63,7 @@ function ripgrep.class()
   return klass
 end
 
-local Buffer = ripgrep.class()
+local Buffer = class()
 
 function ripgrep.init_buffer(buffer)
   if ripgrep.buffers[buffer] ~= nil then
@@ -215,17 +259,17 @@ function Buffer:match(data)
   }
 end
 
-function spawn(cmd, args, callback)
+function ripgrep.spawn(cmd, args, callback)
   local reading = false
   local handle
   local stdout = loop.new_pipe(false)
 
-  function on_read(err, chunk)
+  local function on_read(err, chunk)
     if err then error(err) end
     vim.schedule(function () callback(chunk) end)
   end
 
-  function on_exit(code, signal)
+  local function on_exit(code, signal)
     stdout:read_stop()
     stdout:close()
     handle:close()
@@ -256,50 +300,6 @@ function spawn(cmd, args, callback)
   process.read_resume()
 
   return process
-end
-
-function split_lines(str)
-  local lines = {}
-  local len = str:len()
-  local pos = 1
-  while pos <= len do
-    local b, e = str:find("\r?\n", pos)
-    if b then
-      table.insert(lines, str:sub(pos, b - 1))
-      pos = e + 1
-    else
-      table.insert(lines, str:sub(pos))
-      break
-    end
-  end
-  return lines
-end
-
-function each_line(callback)
-  local feed
-  feed = coroutine.wrap(function (chunk)
-    local line = ''
-    local cursor = 1
-    while chunk do
-      local newline = chunk:find('\n', cursor)
-      line = line .. chunk:sub(cursor, newline)
-      if newline then
-        cursor = newline + 1
-        callback(line)
-        line = ''
-      else
-        chunk = coroutine.yield()
-        cursor = 1
-      end
-    end
-    while true do
-      if chunk then
-        error('unexpected chunk after end of stream')
-      end
-      coroutine.yield()
-    end
-  end)
-  return feed
 end
 
 return ripgrep
