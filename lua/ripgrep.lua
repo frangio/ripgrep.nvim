@@ -165,7 +165,7 @@ function Buffer:spawn()
       self[obj.type](self, obj.data)
     end
   end)
-  self.process = spawn('rg', args, function (chunk)
+  self.process = ripgrep.spawn('rg', args, function (chunk)
     vim.schedule(function () self:pause_or_resume() end)
     line_callback(chunk)
   end)
