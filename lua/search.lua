@@ -136,10 +136,16 @@ function Search:match(data)
     end
 
     if type(self.on_match) == "function" then self.on_match(data) end
-    local index = self.get_index()
+    local index, line
+    if type(self.get_index) == "function" then
+        index = self.get_index()
+        line = index
+    else
+        index = #self.matches + 1
+    end
 
     self.matches[index] = {
-        line = index,
+        line = line,
         line_number = data.line_number,
         path = data.path.text,
         text = data.lines.text,
