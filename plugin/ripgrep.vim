@@ -28,6 +28,10 @@ function! s:on_write(buffer)
   call luaeval('require("ripgrep").get_buffer(_A.buffer):on_write()', l:)
 endfunction
 
-command! -nargs=? Rg exec 'edit rg:///' . <q-args>
-command! -nargs=? Rgi exec 'edit rg://-i/' . <q-args>
-command! -nargs=? Rgw exec 'edit rg://-w/' . <q-args>
+command! -nargs=? Rg call ripgrep#search('', <q-args>)
+command! -nargs=? Rgi call ripgrep#search('-i', <q-args>)
+command! -nargs=? Rgw call ripgrep#search('-w', <q-args>)
+
+" command! -nargs=? Rg exec 'edit rg:///' . <q-args>
+" command! -nargs=? Rgi exec 'edit rg://-i/' . <q-args>
+" command! -nargs=? Rgw exec 'edit rg://-w/' . <q-args>

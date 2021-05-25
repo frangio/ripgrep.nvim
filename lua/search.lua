@@ -2,20 +2,23 @@ local api = vim.api
 local dkjson = require('dkjson')
 local loop = vim.loop
 
-local function spawn(cmd, args, callback)
+local function spawn(cmd, args, on_read_callback, on_exit_callback)
   local reading = false
   local handle
   local stdout = loop.new_pipe(false)
 
   local function on_read(err, chunk)
     if err then error(err) end
-    vim.schedule(function () callback(chunk) end)
+    vim.schedule(function () on_read_callback(chunk) end)
   end
 
-  local function on_exit(code, signal)
+  local function on_exit(_, _)
     stdout:read_stop()
     stdout:close()
     handle:close()
+    if type(on_exit_callback) == "function" then
+        vim.schedule(function () on_exit_callback() end)
+    end
   end
 
   local process = {}
@@ -91,34 +94,40 @@ end
 
 local Search = {}
 
-function Search:new(options, pattern, on_begin, on_match, on_finished)
+function Search:new(options, pattern, on_begin, on_match, on_finished, get_index)
     local state = {
         options = options,
         pattern = pattern,
         matches = {},
-        cur_file_name = '',
         on_begin = nil,
         on_match = nil,
         on_finished = nil,
         process = nil
     }
 
+    self.__index = self
+    local _search = setmetatable(state, self)
+    _search:set_callbacks(on_begin, on_match, on_finished, get_index)
+    return _search
+end
+
+function Search:set_callbacks(on_begin, on_match, on_finished, get_index)
     if type(on_begin) == "function" then
-        state.on_begin = on_begin
+        self.on_begin = on_begin
     end
     if type(on_match) == "function" then
-        state.on_match = on_match
+        self.on_match = on_match
     end
     if type(on_finished) == "function" then
-        state.on_finished = on_finished
+        self.on_finished = on_finished
     end
-
-    self.__index = self
-    return setmetatable(state, self)
+    if type(get_index) == "function" then
+        self.get_index = get_index
+    end
 end
 
 function Search:begin(data)
-    self.on_begin(data)
+    if type(self.on_begin) == "funciton" then self.on_begin(data) end
 end
 
 function Search:match(data)
@@ -126,11 +135,8 @@ function Search:match(data)
         return
     end
 
-    local index = self.on_match(data)
-
-    for _, match in ipairs(data.submatches) do
-        api.nvim_buf_add_highlight(self.buffer, -1, 'rgMatch', index, match.start, match['end'])
-    end
+    if type(self.on_match) == "function" then self.on_match(data) end
+    local index = self.get_index()
 
     self.matches[index] = {
         line = index,
@@ -155,7 +161,6 @@ function Search:search()
     vim.schedule(function () self:read_resume() end)
     line_callback(chunk)
   end)
-  print(vim.inspect(self.process))
 end
 
 function Search:read_pause()

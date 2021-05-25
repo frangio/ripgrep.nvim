@@ -1,5 +1,4 @@
 local api = vim.api
-local Search = require("search")
 
 local function split_lines(str)
     local lines = {}
@@ -22,20 +21,21 @@ end
 
 local Buffer = {}
 
-function Buffer:new(buffer)
+function Buffer:new(buffer, search)
     local state = {
         buffer = buffer,
-        search = nil,
+        search = search,
+        last_line = 0,
         done_callbacks = {},
         windows = {},
         appended = false
     }
 
     self.__index = self
-    local new_buffer = setmetatable(state, self)
-    new_buffer:set_options()
-    new_buffer:spawn()
-    return new_buffer
+    local _buffer = setmetatable(state, self)
+    _buffer:set_options()
+    _buffer:spawn()
+    return _buffer
 end
 
 function Buffer:close()
@@ -53,19 +53,6 @@ function Buffer:set_options()
     api.nvim_buf_set_option(self.buffer, 'buftype', 'acwrite')
     api.nvim_buf_set_option(self.buffer, 'bufhidden', 'hide')
     api.nvim_buf_set_option(self.buffer, 'swapfile', false)
-end
-
-function Buffer:parse()
-    local query = api.nvim_buf_get_name(self.buffer)
-    local options, pattern = query:match("rg://([^/]*)/(.*)")
-
-    if options:len() == 0 then
-        options = {}
-    else
-        options = vim.split(options, ' +')
-    end
-
-    return options, pattern
 end
 
 function Buffer:append(lines)
@@ -91,7 +78,17 @@ function Buffer:begin(data)
 end
 
 function Buffer:match(data)
-    return self:append(split_lines(data.lines.text))
+    local index = self:append(split_lines(data.lines.text))
+
+    for _, match in ipairs(data.submatches) do
+        api.nvim_buf_add_highlight(self.buffer, -1, 'rgMatch', index, match.start, match['end'])
+    end
+
+    self.last_line = index
+end
+
+function Buffer:get_index()
+    return self.last_line
 end
 
 function Buffer:on_write()
@@ -148,13 +145,11 @@ function Buffer:make_change(match)
 end
 
 function Buffer:spawn()
-    local options, pattern = self:parse()
-    self.search = Search:new(
-    options,
-    pattern,
-    function(data) self:begin(data) end,
-    function(data) return self:match(data) end,
-    function() end
+    self.search:set_callbacks(
+        function(data) self:begin(data) end,
+        function(data) return self:match(data) end,
+        function() end,
+        function() return self:get_index() end
     )
     self.search:search()
 end
