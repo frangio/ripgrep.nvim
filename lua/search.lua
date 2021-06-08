@@ -127,7 +127,7 @@ function Search:set_callbacks(on_begin, on_match, on_finished, get_index)
 end
 
 function Search:begin(data)
-    if type(self.on_begin) == "funciton" then self.on_begin(data) end
+    if type(self.on_begin) == "function" then self.on_begin(data) end
 end
 
 function Search:match(data)
@@ -158,7 +158,6 @@ function Search:search()
   local line_callback = each_line(function (line)
     local obj = dkjson.decode(line)
     if self[obj.type] then
-
       self[obj.type](self, obj.data)
     end
   end)
