@@ -47,8 +47,8 @@ function Buffer:append(lines)
     return api.nvim_buf_line_count(self.bufnr) - 1
 end
 
-function Buffer:begin_file(filename)
-    local title = {filename}
+function Buffer:begin_file(data)
+    local title = {data.path.text}
 
     if self.appended then
         table.insert(title, 1, '')
@@ -58,14 +58,18 @@ function Buffer:begin_file(filename)
     api.nvim_buf_add_highlight(self.bufnr, -1, 'rgFileName', line, 0, -1)
 end
 
-function Buffer:add_file_match(line, submatches)
-    local index = self:append(split_lines(line))
+function Buffer:add_file_match(data)
+    local line = self:append(split_lines(data.lines.text))
 
-    for _, submatch in ipairs(submatches) do
-        api.nvim_buf_add_highlight(self.bufnr, -1, 'rgMatch', index, submatch.start, submatch['end'])
+    for _, submatch in ipairs(data.submatches) do
+        api.nvim_buf_add_highlight(self.bufnr, -1, 'rgMatch', line, submatch.start, submatch['end'])
     end
 
-    self.last_line = index
+    self.matches[line] = {
+        line = line,
+        line_number = data.line_number,
+        path = data.path.text,
+    }
 end
 
 function Buffer:spawn()
@@ -73,13 +77,16 @@ function Buffer:spawn()
     local args = vim.tbl_flatten({'--json', options, '--', pattern})
     self.process = spawn_json_producer('rg', args, {
         begin = function (data)
-            self:begin_file(data.path.text)
+            if data.path.bytes then
+                return
+            end
+            self:begin_file(data)
         end,
         match = function (data)
             if data.lines.bytes or data.path.bytes then
                 return
             end
-            self:add_file_match(data.lines.text, data.submatches)
+            self:add_file_match(data)
         end,
     })
 end
