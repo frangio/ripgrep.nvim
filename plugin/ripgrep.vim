@@ -5,6 +5,10 @@ augroup ripgrep
   autocmd CursorMoved rg://*  call <SID>cursor_moved(expand("<abuf>"), win_getid())
 augroup end
 
+command! -nargs=? Rg call <SID>open_search('', <q-args>)
+command! -nargs=? Rgi call <SID>open_search('-i', <q-args>)
+command! -nargs=? Rgw call <SID>open_search('-w', <q-args>)
+
 function! s:init_buffer(buffer)
   let l:buffer = str2nr(a:buffer)
   call luaeval('require("ripgrep").init_buffer(_A.buffer)', l:)
@@ -25,7 +29,3 @@ endfunction
 function! s:open_search(options, pattern)
   call luaeval('require("ripgrep").open_search(_A.options, _A.pattern)', a:)
 endfunction
-
-command! -nargs=? Rg call <SID>open_search('', <q-args>)
-command! -nargs=? Rgi call <SID>open_search('-i', <q-args>)
-command! -nargs=? Rgw call <SID>open_search('-w', <q-args>)
