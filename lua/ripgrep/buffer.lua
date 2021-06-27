@@ -1,33 +1,13 @@
-local class = require('rigprep.class')
-
+local class = require('ripgrep.class')
+local spawn_json_producer = require('ripgrep.utils.spawn_json_producer')
+local split_lines = require('ripgrep.utils.split_lines')
 local api = vim.api
-
-local function split_lines(str)
-    local lines = {}
-    local len = str:len()
-    local pos = 1
-
-    while pos <= len do
-        local b, e = str:find("\r?\n", pos)
-        if b then
-            table.insert(lines, str:sub(pos, b - 1))
-            pos = e + 1
-        else
-            table.insert(lines, str:sub(pos))
-            break
-        end
-    end
-
-    return lines
-end
 
 local Buffer = class()
 
-function Buffer:initialize(buffer, search)
-    self.buffer = buffer
-    self.search = search
-    self.last_line = 0
-    self.done_callbacks = {}
+function Buffer:initialize(bufnr)
+    self.bufnr = bufnr
+    self.matches = {}
     self.windows = {}
     self.appended = false
 
@@ -36,7 +16,7 @@ function Buffer:initialize(buffer, search)
 end
 
 function Buffer:close()
-    self.search.process.kill()
+    self.process.kill()
 end
 
 function Buffer:setup_window(window)
@@ -46,58 +26,76 @@ function Buffer:setup_window(window)
 end
 
 function Buffer:set_options()
-    api.nvim_buf_set_option(self.buffer, 'filetype', 'ripgrep')
-    api.nvim_buf_set_option(self.buffer, 'buftype', 'nowrite')
-    api.nvim_buf_set_option(self.buffer, 'bufhidden', 'hide')
-    api.nvim_buf_set_option(self.buffer, 'swapfile', false)
-    api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+    api.nvim_buf_set_option(self.bufnr, 'filetype', 'ripgrep')
+    api.nvim_buf_set_option(self.bufnr, 'buftype', 'nowrite')
+    api.nvim_buf_set_option(self.bufnr, 'bufhidden', 'hide')
+    api.nvim_buf_set_option(self.bufnr, 'swapfile', false)
+    api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 end
 
 function Buffer:append(lines)
+    vim.schedule(function () self:pause_or_resume() end)
+
     local start = self.appended and -1 or -2
 
     self.appended = true
 
-    api.nvim_buf_set_option(self.buffer, 'modifiable', true)
-    api.nvim_buf_set_lines(self.buffer, start, -1, true, lines)
-    api.nvim_buf_set_option(self.buffer, 'modifiable', false)
+    api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
+    api.nvim_buf_set_lines(self.bufnr, start, -1, true, lines)
+    api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
 
-    return api.nvim_buf_line_count(self.buffer) - 1
+    return api.nvim_buf_line_count(self.bufnr) - 1
 end
 
-function Buffer:begin(data)
-    local title = {data.path.text}
+function Buffer:begin_file(filename)
+    local title = {filename}
 
     if self.appended then
         table.insert(title, 1, '')
     end
 
     local line = self:append(title)
-    api.nvim_buf_add_highlight(self.buffer, -1, 'rgFileName', line, 0, -1)
+    api.nvim_buf_add_highlight(self.bufnr, -1, 'rgFileName', line, 0, -1)
 end
 
-function Buffer:match(data)
-    local index = self:append(split_lines(data.lines.text))
+function Buffer:add_file_match(line, submatches)
+    local index = self:append(split_lines(line))
 
-    for _, match in ipairs(data.submatches) do
-        api.nvim_buf_add_highlight(self.buffer, -1, 'rgMatch', index, match.start, match['end'])
+    for _, submatch in ipairs(submatches) do
+        api.nvim_buf_add_highlight(self.bufnr, -1, 'rgMatch', index, submatch.start, submatch['end'])
     end
 
     self.last_line = index
 end
 
-function Buffer:get_index()
-    return self.last_line
+function Buffer:spawn()
+    local options, pattern = self:parse()
+    local args = vim.tbl_flatten({'--json', options, '--', pattern})
+    self.process = spawn_json_producer('rg', args, {
+        begin = function (data)
+            print('begin', vim.inspect(data))
+            self:begin_file(data.path.text)
+        end,
+        match = function (data)
+            if data.lines.bytes or data.path.bytes then
+                return
+            end
+            self:add_file_match(data.lines.text, data.submatches)
+        end,
+    })
 end
 
-function Buffer:spawn()
-    self.search:set_callbacks(
-        function(data) self:begin(data) end,
-        function(data) return self:match(data) end,
-        function() end,
-        function() return self:get_index() end
-    )
-    self.search:search()
+function Buffer:parse()
+    local query = api.nvim_buf_get_name(self.bufnr)
+    local options, pattern = query:match("rg://([^/]*)/(.*)")
+    if options == nil then
+        error('bad ripgrep uri (rg://[options]/pattern)')
+    elseif options:len() == 0 then
+        options = {}
+    else
+        options = vim.split(options, ' +')
+    end
+    return options, pattern
 end
 
 function Buffer:get_max_cur_line()
@@ -119,6 +117,10 @@ function Buffer:get_max_cur_line()
     return max_cur_line, win_height
 end
 
+function Buffer:cursor_moved(window)
+    self:pause_or_resume(window)
+end
+
 function Buffer:pause_or_resume(window)
     local cur_line, win_height
     if window then
@@ -128,18 +130,17 @@ function Buffer:pause_or_resume(window)
         cur_line, win_height = self:get_max_cur_line()
     end
 
-    local line_count = api.nvim_buf_line_count(self.buffer)
+    local line_count = api.nvim_buf_line_count(self.bufnr)
     if cur_line > line_count - win_height then
-        self.search:read_resume()
+        self.process:read_resume()
     else
-        self.search:read_pause()
+        self.process:read_pause()
     end
-
 end
 
 function Buffer:go_to_match(window)
     local cur_line, cur_col = unpack(api.nvim_win_get_cursor(window))
-    local match = self.search.matches[cur_line - 1]
+    local match = self.matches[cur_line - 1]
     if match then
         local pos = match.line_number .. 'G' .. (cur_col + 1) .. '|'
         api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. match.path)
