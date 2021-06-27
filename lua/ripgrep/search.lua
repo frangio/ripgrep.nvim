@@ -104,7 +104,7 @@ function Search:initialize(options, pattern, on_begin, on_match, on_finished, ge
     self.on_finished = nil
     self.process = nil
 
-    _search:set_callbacks(on_begin, on_match, on_finished, get_index)
+    self:set_callbacks(on_begin, on_match, on_finished, get_index)
 end
 
 function Search:set_callbacks(on_begin, on_match, on_finished, get_index)

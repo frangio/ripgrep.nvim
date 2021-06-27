@@ -31,8 +31,8 @@ function Buffer:initialize(buffer, search)
     self.windows = {}
     self.appended = false
 
-    _buffer:set_options()
-    _buffer:spawn()
+    self:set_options()
+    self:spawn()
 end
 
 function Buffer:close()
