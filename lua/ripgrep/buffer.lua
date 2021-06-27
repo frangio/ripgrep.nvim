@@ -73,7 +73,6 @@ function Buffer:spawn()
     local args = vim.tbl_flatten({'--json', options, '--', pattern})
     self.process = spawn_json_producer('rg', args, {
         begin = function (data)
-            print('begin', vim.inspect(data))
             self:begin_file(data.path.text)
         end,
         match = function (data)
