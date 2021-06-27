@@ -148,7 +148,6 @@ function Search:match(data)
         line = line,
         line_number = data.line_number,
         path = data.path.text,
-        text = data.lines.text,
     }
 end
 
