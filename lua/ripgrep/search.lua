@@ -1,5 +1,6 @@
+local class = require('ripgrep.class')
+local dkjson = require('ripgrep.dkjson')
 local api = vim.api
-local dkjson = require('dkjson')
 local loop = vim.loop
 
 local function spawn(cmd, args, on_read_callback, on_exit_callback)
@@ -92,23 +93,18 @@ local function split_lines(str)
   return lines
 end
 
-local Search = {}
+local Search = class()
 
-function Search:new(options, pattern, on_begin, on_match, on_finished, get_index)
-    local state = {
-        options = options,
-        pattern = pattern,
-        matches = {},
-        on_begin = nil,
-        on_match = nil,
-        on_finished = nil,
-        process = nil
-    }
+function Search:initialize(options, pattern, on_begin, on_match, on_finished, get_index)
+    self.options = options
+    self.pattern = pattern
+    self.matches = {}
+    self.on_begin = nil
+    self.on_match = nil
+    self.on_finished = nil
+    self.process = nil
 
-    self.__index = self
-    local _search = setmetatable(state, self)
     _search:set_callbacks(on_begin, on_match, on_finished, get_index)
-    return _search
 end
 
 function Search:set_callbacks(on_begin, on_match, on_finished, get_index)

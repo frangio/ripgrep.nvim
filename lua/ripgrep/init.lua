@@ -1,5 +1,5 @@
-local Buffer = require("buffer")
-local Search = require("search")
+local Buffer = require("ripgrep.buffer")
+local Search = require("ripgrep.search")
 
 local ripgrep = {}
 ripgrep.buffers = {}

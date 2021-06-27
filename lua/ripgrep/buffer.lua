@@ -1,3 +1,5 @@
+local class = require('rigprep.class')
+
 local api = vim.api
 
 local function split_lines(str)
@@ -19,23 +21,18 @@ local function split_lines(str)
     return lines
 end
 
-local Buffer = {}
+local Buffer = class()
 
-function Buffer:new(buffer, search)
-    local state = {
-        buffer = buffer,
-        search = search,
-        last_line = 0,
-        done_callbacks = {},
-        windows = {},
-        appended = false
-    }
+function Buffer:initialize(buffer, search)
+    self.buffer = buffer
+    self.search = search
+    self.last_line = 0
+    self.done_callbacks = {}
+    self.windows = {}
+    self.appended = false
 
-    self.__index = self
-    local _buffer = setmetatable(state, self)
     _buffer:set_options()
     _buffer:spawn()
-    return _buffer
 end
 
 function Buffer:close()
