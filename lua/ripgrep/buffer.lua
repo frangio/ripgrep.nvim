@@ -108,7 +108,7 @@ function Buffer:get_max_cur_line()
     local max_cur_line = -1
     local win_height = 0
     for idx, winid in pairs(self.windows) do
-        local success, cursor = pcall(api.nvim_win_get_cursor, window)
+        local success, cursor = pcall(api.nvim_win_get_cursor, winid)
         if not success then
             -- assume window doesn't exist anymore
             self.windows[idx] = nil
@@ -116,7 +116,7 @@ function Buffer:get_max_cur_line()
             local cur_line = unpack(cursor)
             if cur_line > max_cur_line then
                 max_cur_line = cur_line
-                win_height = api.nvim_win_get_height(window)
+                win_height = api.nvim_win_get_height(winid)
             end
         end
     end
