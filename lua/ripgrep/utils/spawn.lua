@@ -6,7 +6,10 @@ local function spawn(cmd, args, callback)
   local stdout = loop.new_pipe(false)
 
   local function on_read(err, chunk)
-    if err then error(err) end
+    if err then
+      vim.notify(err, vim.log.levels.ERROR)
+      process.kill()
+    end
     vim.schedule(function () callback(chunk) end)
   end
 
