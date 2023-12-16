@@ -5,6 +5,8 @@ local function spawn(cmd, args, callback)
   local handle
   local stdout = loop.new_pipe(false)
 
+  local process = {}
+
   local function on_read(err, chunk)
     if err then
       vim.notify(err, vim.log.levels.ERROR)
@@ -18,8 +20,6 @@ local function spawn(cmd, args, callback)
     stdout:close()
     handle:close()
   end
-
-  local process = {}
 
   function process.read_resume()
     if not reading then
