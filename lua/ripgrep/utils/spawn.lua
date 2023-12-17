@@ -12,7 +12,9 @@ local function spawn(cmd, args, callback)
       vim.notify(err, vim.log.levels.ERROR)
       process.kill()
     end
-    vim.schedule(function () callback(chunk) end)
+    if chunk then
+      vim.schedule(function () callback(chunk) end)
+    end
   end
 
   local function on_exit()
