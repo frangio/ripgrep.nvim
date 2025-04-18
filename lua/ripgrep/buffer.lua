@@ -12,6 +12,7 @@ function Buffer:initialize(bufnr)
     self.appended = false
 
     self:set_options()
+    self:set_keymaps()
     self:spawn()
 end
 
@@ -31,6 +32,12 @@ function Buffer:set_options()
     api.nvim_buf_set_option(self.bufnr, 'bufhidden', 'hide')
     api.nvim_buf_set_option(self.bufnr, 'swapfile', false)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+end
+
+function Buffer:set_keymaps()
+  local go_to_match = function () self:go_to_match(0) end
+  vim.keymap.set('n', '<Return>', go_to_match, { buffer = self.bufnr })
+  vim.keymap.set('n', '<2-LeftMouse>', go_to_match, { buffer = self.bufnr })
 end
 
 function Buffer:append(lines)
