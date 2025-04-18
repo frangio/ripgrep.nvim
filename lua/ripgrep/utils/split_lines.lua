@@ -3,7 +3,7 @@ local function split_lines(str)
     local len = str:len()
     local pos = 1
     while pos <= len do
-        local b, e = str:find("\r?\n", pos)
+        local b, e = str:find('\r?\n', pos)
         if b then
             table.insert(lines, str:sub(pos, b - 1))
             pos = e + 1

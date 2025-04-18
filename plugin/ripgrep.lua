@@ -1,37 +1,37 @@
-local group = vim.api.nvim_create_augroup("ripgrep", { clear = true })
+local group = vim.api.nvim_create_augroup('ripgrep', { clear = true })
 
-vim.api.nvim_create_autocmd("BufReadCmd", {
+vim.api.nvim_create_autocmd('BufReadCmd', {
   group = group,
-  pattern = "rg://*",
+  pattern = 'rg://*',
   callback = function (ev)
-    require("ripgrep").init_buffer(ev.buf)
+    require('ripgrep').init_buffer(ev.buf)
   end
 })
 
-vim.api.nvim_create_autocmd("BufWinEnter", {
+vim.api.nvim_create_autocmd('BufWinEnter', {
   group = group,
-  pattern = "rg://*",
+  pattern = 'rg://*',
   callback = function (ev)
     local window = vim.api.nvim_get_current_win()
-    require("ripgrep").get_buffer(ev.buf):setup_window(window)
+    require('ripgrep').get_buffer(ev.buf):setup_window(window)
   end
 })
 
-vim.api.nvim_create_autocmd("CursorMoved", {
+vim.api.nvim_create_autocmd('CursorMoved', {
   group = group,
-  pattern = "rg://*",
+  pattern = 'rg://*',
   callback = function (ev)
     local window = vim.api.nvim_get_current_win()
-    require("ripgrep").get_buffer(ev.buf):cursor_moved(window)
+    require('ripgrep').get_buffer(ev.buf):cursor_moved(window)
   end
 })
 
 function opener(flags)
   return function (opts)
-    require("ripgrep").open_search(flags, table.concat(opts.fargs, " "))
+    require('ripgrep').open_search(flags, table.concat(opts.fargs, ' '))
   end
 end
 
-vim.api.nvim_create_user_command("Rg",  opener(""),   { nargs = "?" })
-vim.api.nvim_create_user_command("Rgi", opener("-i"), { nargs = "?" })
-vim.api.nvim_create_user_command("Rgw", opener("-w"), { nargs = "?" })
+vim.api.nvim_create_user_command('Rg',  opener(''),   { nargs = '?' })
+vim.api.nvim_create_user_command('Rgi', opener('-i'), { nargs = '?' })
+vim.api.nvim_create_user_command('Rgw', opener('-w'), { nargs = '?' })

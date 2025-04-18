@@ -1,4 +1,4 @@
-local Buffer = require("ripgrep.buffer")
+local Buffer = require('ripgrep.buffer')
 
 local ripgrep = {}
 ripgrep.buffers = {}
@@ -15,8 +15,8 @@ function ripgrep.get_buffer(bufnr)
 end
 
 function ripgrep.open_search(options, pattern)
-    local bufname = "rg://" .. options .. "/" .. pattern
-    vim.cmd("edit " .. bufname)
+    local bufname = 'rg://' .. options .. '/' .. pattern
+    vim.cmd('edit ' .. bufname)
 end
 
 return ripgrep

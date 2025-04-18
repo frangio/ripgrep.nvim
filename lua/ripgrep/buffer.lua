@@ -100,7 +100,7 @@ end
 
 function Buffer:parse()
     local query = api.nvim_buf_get_name(self.bufnr)
-    local options, pattern = query:match("rg://([^/]*)/(.*)")
+    local options, pattern = query:match('rg://([^/]*)/(.*)')
     if options == nil then
         error('bad ripgrep uri (rg://[options]/pattern)')
     elseif options:len() == 0 then
