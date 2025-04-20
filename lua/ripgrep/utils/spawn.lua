@@ -10,7 +10,7 @@ local function spawn(cmd, args, callback)
     if err then
       vim.notify('ripgrep.nvim: ' .. err, vim.log.levels.ERROR)
       process.kill()
-    if chunk then
+    elseif chunk then
       vim.schedule(function () callback(chunk) end)
     end
   end
