@@ -17,6 +17,14 @@ vim.api.nvim_create_autocmd('BufWinEnter', {
   end
 })
 
+vim.api.nvim_create_autocmd('BufDelete', {
+  group = group,
+  pattern = 'rg://*',
+  callback = function (ev)
+    require('ripgrep').get_buffer(ev.buf):close()
+  end
+})
+
 vim.api.nvim_create_autocmd('CursorMoved', {
   group = group,
   pattern = 'rg://*',
