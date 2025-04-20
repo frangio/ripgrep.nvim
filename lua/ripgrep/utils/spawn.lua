@@ -24,7 +24,6 @@ local function spawn(cmd, args, callback)
   end
 
   function process.kill()
-    stdout:read_stop()
     handle:kill('sigkill')
   end
 
