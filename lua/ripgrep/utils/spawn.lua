@@ -25,7 +25,7 @@ local function spawn(cmd, args, callback)
 
   function process.kill()
     stdout:read_stop()
-    handle:process_kill('SIGKILL')
+    handle:kill('sigkill')
   end
 
   handle = vim.uv.spawn(
