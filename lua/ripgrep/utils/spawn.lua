@@ -1,47 +1,47 @@
-local loop = vim.loop
+local uv = vim.uv
 
 local function spawn(cmd, args, callback)
-  local reading = false
   local handle
-  local stdout = loop.new_pipe(false)
+  local stdout = uv.new_pipe(false)
 
   local process = {}
 
   local function on_read(err, chunk)
     if err then
-      vim.notify(err, vim.log.levels.ERROR)
+      vim.notify('ripgrep.nvim: ' .. err, vim.log.levels.ERROR)
       process.kill()
-    end
     if chunk then
       vim.schedule(function () callback(chunk) end)
     end
   end
 
-  local function on_exit()
-    stdout:read_stop()
-    stdout:close()
-    handle:close()
-  end
-
   function process.read_resume()
-    if not reading then
-      loop.read_start(stdout, on_read)
-    end
+    stdout:read_start(on_read)
   end
 
   function process.read_pause()
-    loop.read_stop(stdout)
+    stdout:read_stop()
   end
 
   function process.kill()
-    loop.read_stop(stdout)
-    loop.process_kill(handle, 'SIGKILL')
+    stdout:read_stop()
+    handle:process_kill('SIGKILL')
   end
 
-  handle = loop.spawn(cmd, {
-    args = args,
-    stdio = {nil, stdout, nil},
-  }, on_exit)
+  handle = vim.uv.spawn(
+    cmd,
+    {
+      args = args,
+      stdio = {nil, stdout, nil},
+    },
+    function ()
+      stdout:read_stop()
+      stdout:close()
+      handle:close()
+    end
+  )
+
+  -- TODO: if handle is nil close stdout
 
   process.read_resume()
 
