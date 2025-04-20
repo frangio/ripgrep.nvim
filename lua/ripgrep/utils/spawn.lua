@@ -1,7 +1,7 @@
 local uv = vim.uv
 
 local function spawn(cmd, args, callback)
-  local handle
+  local process_handle
   local stdout = uv.new_pipe(false)
 
   local process = {}
@@ -24,10 +24,10 @@ local function spawn(cmd, args, callback)
   end
 
   function process.kill()
-    handle:kill('sigkill')
+    process_handle:kill('sigkill')
   end
 
-  handle = vim.uv.spawn(
+  process_handle = vim.uv.spawn(
     cmd,
     {
       args = args,
@@ -36,11 +36,11 @@ local function spawn(cmd, args, callback)
     function ()
       stdout:read_stop()
       stdout:close()
-      handle:close()
+      process_handle:close()
     end
   )
 
-  -- TODO: if handle is nil close stdout
+  -- TODO: if process_handle is nil close stdout
 
   process.read_resume()
 
