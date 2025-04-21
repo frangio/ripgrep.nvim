@@ -34,7 +34,7 @@ vim.api.nvim_create_autocmd('CursorMoved', {
   end
 })
 
-function opener(flags)
+local function opener(flags)
   return function (opts)
     require('ripgrep').open_search(flags, table.concat(opts.fargs, ' '))
   end
