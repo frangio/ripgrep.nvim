@@ -14,9 +14,4 @@ function ripgrep.get_buffer(bufnr)
     return ripgrep.buffers[bufnr] or error('not an active ripgrep buffer!')
 end
 
-function ripgrep.open_search(options, pattern)
-    local bufname = 'rg://' .. options .. '/' .. pattern
-    vim.cmd('edit ' .. bufname)
-end
-
 return ripgrep

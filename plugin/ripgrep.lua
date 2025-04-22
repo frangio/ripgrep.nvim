@@ -34,12 +34,6 @@ vim.api.nvim_create_autocmd('CursorMoved', {
   end
 })
 
-local function opener(flags)
-  return function (opts)
-    require('ripgrep').open_search(flags, table.concat(opts.fargs, ' '))
-  end
-end
-
-vim.api.nvim_create_user_command('Rg',  opener(''),   { nargs = '?' })
-vim.api.nvim_create_user_command('Rgi', opener('-i'), { nargs = '?' })
-vim.api.nvim_create_user_command('Rgw', opener('-w'), { nargs = '?' })
+vim.api.nvim_create_user_command('Rg',  'edit rg:///<args>',   { nargs = '?' })
+vim.api.nvim_create_user_command('Rgi', 'edit rg://-i/<args>', { nargs = '?' })
+vim.api.nvim_create_user_command('Rgw', 'edit rg://-w/<args>', { nargs = '?' })
