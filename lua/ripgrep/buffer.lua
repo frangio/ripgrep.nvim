@@ -28,7 +28,7 @@ end
 
 function Buffer:set_options()
     api.nvim_buf_set_option(self.bufnr, 'filetype', 'ripgrep')
-    api.nvim_buf_set_option(self.bufnr, 'buftype', 'nofile')
+    api.nvim_buf_set_option(self.bufnr, 'buftype', 'nowrite')
     api.nvim_buf_set_option(self.bufnr, 'bufhidden', 'hide')
     api.nvim_buf_set_option(self.bufnr, 'swapfile', false)
     api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
