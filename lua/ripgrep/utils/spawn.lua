@@ -9,21 +9,21 @@ local function spawn(cmd, args, callback)
   local function on_read(err, chunk)
     if err then
       vim.notify('ripgrep.nvim: ' .. err, vim.log.levels.ERROR)
-      process.kill()
+      process.stop()
     elseif chunk then
       vim.schedule(function () callback(chunk) end)
     end
   end
 
-  function process.read_resume()
+  function process.resume()
     stdout:read_start(on_read)
   end
 
-  function process.read_pause()
+  function process.pause()
     stdout:read_stop()
   end
 
-  function process.kill()
+  function process.stop()
     process_handle:kill('sigkill')
   end
 
@@ -42,7 +42,7 @@ local function spawn(cmd, args, callback)
 
   -- TODO: if process_handle is nil close stdout
 
-  process.read_resume()
+  process.resume()
 
   return process
 end
