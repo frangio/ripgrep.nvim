@@ -62,9 +62,15 @@ local function rgbuf(bufnr)
   vim.api.nvim_set_option_value('swapfile', false, { buf = bufnr })
   vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
 
+  local needed_rows = 0
+
   local ns = vim.api.nvim_create_namespace('')
 
-  local windows = {}
+  local function update_needed_rows(window)
+    local cursor_row = unpack(vim.api.nvim_win_get_cursor(window))
+    local win_height = vim.api.nvim_win_get_height(window)
+    needed_rows = math.max(needed_rows, cursor_row + win_height)
+  end
 
   vim.api.nvim_create_autocmd('BufWinEnter', {
     buffer = bufnr,
@@ -72,7 +78,7 @@ local function rgbuf(bufnr)
     callback = function ()
       vim.api.nvim_set_option_value('number', false, { win = 0 })
       vim.api.nvim_set_option_value('relativenumber', false, { win = 0 })
-      table.insert(windows, vim.api.nvim_get_current_win())
+      update_needed_rows(0)
     end
   })
 
@@ -105,48 +111,21 @@ local function rgbuf(bufnr)
     pause_or_resume()
   end)
 
-  local function get_max_cur_line()
-    local max_cur_line = -1
-    local win_height = 0
-    for idx, winid in pairs(windows) do
-      local success, cursor = pcall(vim.api.nvim_win_get_cursor, winid)
-      if not success then
-        -- assume window doesn't exist anymore
-        windows[idx] = nil
-      else
-        local cur_line = unpack(cursor)
-        if cur_line > max_cur_line then
-          max_cur_line = cur_line
-          win_height = vim.api.nvim_win_get_height(winid)
-        end
-      end
-    end
-    return max_cur_line, win_height
-  end
-
-  function pause_or_resume(window)
-    local cur_line, win_height
-    if window then
-      cur_line = unpack(vim.api.nvim_win_get_cursor(window))
-      win_height = vim.api.nvim_win_get_height(window)
-    else
-      cur_line, win_height = get_max_cur_line()
-    end
-
+  function pause_or_resume()
     local line_count = vim.api.nvim_buf_line_count(bufnr)
-    if cur_line > line_count - win_height then
+    if needed_rows > line_count then
       line_producer.resume()
     else
       line_producer.pause()
     end
   end
 
-
-  vim.api.nvim_create_autocmd('CursorMoved', {
+  vim.api.nvim_create_autocmd({'CursorMoved', 'WinScrolled'}, {
     buffer = bufnr,
     group = group,
     callback = function ()
-      pause_or_resume(vim.api.nvim_get_current_win())
+      update_needed_rows(vim.api.nvim_get_current_win())
+      pause_or_resume()
     end
   })
 
