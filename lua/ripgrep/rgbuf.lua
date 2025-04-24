@@ -22,9 +22,18 @@ local function decode(data)
   end
 end
 
+local function list_concat(...)
+  local res = {}
+  for _, list in ipairs({...}) do
+    vim.list_extend(res, list)
+  end
+  return res
+end
+
 local function rglines(bufname, callback)
   local options, pattern = parse(bufname)
-  local args = vim.tbl_flatten({'--json', options, '--', pattern})
+  local args = list_concat({'--json'}, options, {'--', pattern})
+
   local process = spawn_json_producer('rg', args, {
     begin = function (data)
       local path = decode(data.path)
@@ -52,6 +61,8 @@ local function rgbuf(bufnr)
   vim.api.nvim_set_option_value('bufhidden', 'hide', { buf = bufnr })
   vim.api.nvim_set_option_value('swapfile', false, { buf = bufnr })
   vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
+
+  local ns = vim.api.nvim_create_namespace('')
 
   local windows = {}
 
@@ -86,8 +97,7 @@ local function rgbuf(bufnr)
     local lnum = vim.api.nvim_buf_line_count(bufnr) - 1
 
     for _, hl in ipairs(line.hls) do
-      -- TODO: replace deprecated
-      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], lnum, hl[2], hl[3])
+      vim.hl.range(bufnr, ns, hl[1], {lnum, hl[2]}, {lnum, hl[3]})
     end
 
     actions[lnum] = line.action
@@ -158,6 +168,7 @@ local function rgbuf(bufnr)
     vim.api.nvim_clear_autocmds({ buffer = bufnr, group = group })
     vim.api.nvim_buf_del_keymap(bufnr, 'n', '<Return>')
     vim.api.nvim_buf_del_keymap(bufnr, 'n', '<2-LeftMouse>')
+    vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
   end
 end
 
