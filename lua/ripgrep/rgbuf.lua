@@ -14,29 +14,32 @@ local function parse(bufname)
   return options, pattern
 end
 
+local function decode(data)
+  if data.bytes ~= nil then
+    return vim.base64.decode(data.bytes)
+  else
+    return data.text
+  end
+end
+
 local function rglines(bufname, callback)
   local options, pattern = parse(bufname)
   local args = vim.tbl_flatten({'--json', options, '--', pattern})
   local process = spawn_json_producer('rg', args, {
     begin = function (data)
-      if data.path.bytes then
-        return
-      end
+      local path = decode(data.path)
       callback(nil, {})
-      callback(data.path.text, { {'rgFileName', 0, -1} })
+      callback(path, { { 'rgFileName', 0, -1 } })
     end,
     match = function (data)
-      if data.lines.bytes or data.path.bytes then
-        return
-      end
       -- TODO: support multiline
-      local text = data.lines.text:gsub("([^\n]*).*", "%1")
+      local text = decode(data.lines):gsub("([^\n]*).*", "%1")
       local hls = vim.iter(data.submatches):map(function (submatch)
         return {'rgMatch', submatch.start, submatch['end']}
       end):totable()
       local action = function (col)
         local pos = data.line_number .. 'G' .. (col + 1) .. '|'
-        vim.api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. data.path.text)
+        vim.api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. decode(data.path))
       end
       callback(text, hls, action)
     end,
