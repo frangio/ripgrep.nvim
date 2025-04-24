@@ -64,8 +64,6 @@ local function rgbuf(bufnr)
 
   local needed_rows = 0
 
-  local ns = vim.api.nvim_create_namespace('')
-
   local function update_needed_rows(window)
     local cursor_row = unpack(vim.api.nvim_win_get_cursor(window))
     local win_height = vim.api.nvim_win_get_height(window)
@@ -82,6 +80,7 @@ local function rgbuf(bufnr)
     end
   })
 
+  local ns = vim.api.nvim_create_namespace('')
   local started = false
   local actions = {}
 
