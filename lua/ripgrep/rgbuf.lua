@@ -28,8 +28,7 @@ local function rglines(bufname, callback)
   local process = spawn_json_producer('rg', args, {
     begin = function (data)
       local path = decode(data.path)
-      callback(nil, {})
-      callback(path, { { 'rgFileName', 0, -1 } })
+      callback({text = path, newline = true, hls = {{'rgFileName', 0, -1}}})
     end,
     match = function (data)
       -- TODO: support multiline
@@ -41,7 +40,7 @@ local function rglines(bufname, callback)
         local pos = data.line_number .. 'G' .. (col + 1) .. '|'
         vim.api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. decode(data.path))
       end
-      callback(text, hls, action)
+      callback({text = text, hls = hls, action = action})
     end,
   })
   return process
@@ -66,38 +65,34 @@ local function rgbuf(bufnr)
     end
   })
 
+  local started = false
   local actions = {}
-  local appended = false
 
   local pause_or_resume
 
-  local lines = rglines(vim.api.nvim_buf_get_name(bufnr), function (text, hls, action)
-    local lines = {text}
+  local lines = rglines(vim.api.nvim_buf_get_name(bufnr), function (line)
+    local lines = {line.text}
 
-    if text == nil then
-      if not appended then
-        return
-      else
-        lines = {''}
-      end
+    if line.newline and started then
+      table.insert(lines, 1, '')
     end
 
-    local start = appended and -1 or -2
+    local start = started and -1 or -2
 
     vim.api.nvim_set_option_value('modifiable', true, { buf = bufnr })
     vim.api.nvim_buf_set_lines(bufnr, start, -1, true, lines)
     vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
 
-    local line = vim.api.nvim_buf_line_count(bufnr) - 1
+    local linenr = vim.api.nvim_buf_line_count(bufnr) - 1
 
-    for _, hl in ipairs(hls) do
+    for _, hl in ipairs(line.hls) do
       -- TODO: replace deprecated
-      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], line, hl[2], hl[3])
+      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], linenr, hl[2], hl[3])
     end
 
-    actions[line] = action
+    actions[line] = line.action
 
-    appended = true
+    started = true
     vim.schedule(pause_or_resume)
   end)
 
