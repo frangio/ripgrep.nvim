@@ -70,7 +70,7 @@ local function rgbuf(bufnr)
 
   local pause_or_resume
 
-  local lines = rglines(vim.api.nvim_buf_get_name(bufnr), function (line)
+  local line_producer = rglines(vim.api.nvim_buf_get_name(bufnr), function (line)
     local lines = {line.text}
 
     if line.newline and started then
@@ -83,17 +83,16 @@ local function rgbuf(bufnr)
     vim.api.nvim_buf_set_lines(bufnr, start, -1, true, lines)
     vim.api.nvim_set_option_value('modifiable', false, { buf = bufnr })
 
-    local linenr = vim.api.nvim_buf_line_count(bufnr) - 1
+    local lnum = vim.api.nvim_buf_line_count(bufnr) - 1
 
     for _, hl in ipairs(line.hls) do
       -- TODO: replace deprecated
-      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], linenr, hl[2], hl[3])
+      vim.api.nvim_buf_add_highlight(bufnr, -1, hl[1], lnum, hl[2], hl[3])
     end
 
-    actions[line] = line.action
-
+    actions[lnum] = line.action
     started = true
-    vim.schedule(pause_or_resume)
+    pause_or_resume()
   end)
 
   local function get_max_cur_line()
@@ -126,9 +125,9 @@ local function rgbuf(bufnr)
 
     local line_count = vim.api.nvim_buf_line_count(bufnr)
     if cur_line > line_count - win_height then
-      lines.resume()
+      line_producer.resume()
     else
-      lines.pause()
+      line_producer.pause()
     end
   end
 
@@ -155,7 +154,7 @@ local function rgbuf(bufnr)
   vim.api.nvim_buf_set_keymap(bufnr, 'n', '<2-LeftMouse>', '', { callback = do_action })
 
   return function ()
-    lines.stop()
+    line_producer.stop()
     vim.api.nvim_clear_autocmds({ buffer = bufnr, group = group })
     vim.api.nvim_buf_del_keymap(bufnr, 'n', '<Return>')
     vim.api.nvim_buf_del_keymap(bufnr, 'n', '<2-LeftMouse>')
