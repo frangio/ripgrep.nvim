@@ -1,8 +1,6 @@
-local uv = vim.uv
-
 local function spawn(cmd, args, callback)
   local process_handle
-  local stdout = uv.new_pipe(false)
+  local stdout = vim.uv.new_pipe(false)
 
   local process = {}
 
