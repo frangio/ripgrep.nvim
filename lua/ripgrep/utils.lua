@@ -1,4 +1,6 @@
-local function spawn(cmd, args, callback)
+local utils = {}
+
+function utils.spawn(cmd, args, callback)
   local process_handle
   local stdout = vim.uv.new_pipe(false)
 
@@ -8,7 +10,7 @@ local function spawn(cmd, args, callback)
     if err then
       vim.notify('ripgrep.nvim: ' .. err, vim.log.levels.ERROR)
       process.stop()
-    elseif chunk then
+    else
       vim.schedule(function () callback(chunk) end)
     end
   end
@@ -45,4 +47,34 @@ local function spawn(cmd, args, callback)
   return process
 end
 
-return spawn
+function utils.spawn_lines(cmd, args, callback)
+  local next_line = '' --- @type string?
+  return utils.spawn(cmd, args, function (chunk)
+    if chunk == nil then
+      callback(next_line)
+      next_line = nil
+    else
+      local cursor = 1
+      while cursor <= chunk:len() do
+        local line_end = chunk:find('\n', cursor)
+        next_line = next_line .. chunk:sub(cursor, line_end)
+        if line_end == nil then
+          break
+        end
+        callback(next_line)
+        next_line = ''
+        cursor = line_end + 1
+      end
+    end
+  end)
+end
+
+function utils.list_concat(...)
+  local res = {}
+  for _, list in ipairs({...}) do
+    vim.list_extend(res, list)
+  end
+  return res
+end
+
+return utils

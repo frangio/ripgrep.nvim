@@ -1,4 +1,4 @@
-local spawn_json_producer = require('ripgrep.utils.spawn_json_producer')
+local utils = require('ripgrep.utils')
 
 local group = vim.api.nvim_create_augroup('ripgrep.virtbuf', { clear = false })
 
@@ -22,24 +22,19 @@ local function decode(data)
   end
 end
 
-local function list_concat(...)
-  local res = {}
-  for _, list in ipairs({...}) do
-    vim.list_extend(res, list)
-  end
-  return res
-end
-
 local function rglines(bufname, callback)
   local options, pattern = parse(bufname)
-  local args = list_concat({'--json'}, options, {'--', pattern})
+  local args = utils.list_concat({'--json'}, options, {'--', pattern})
 
-  local process = spawn_json_producer('rg', args, {
-    begin = function (data)
-      local path = decode(data.path)
+  local process = utils.spawn_lines('rg', args, function(line)
+    local ok, obj = pcall(vim.json.decode, line)
+    if not ok then
+      return
+    elseif obj.type == 'begin' then
+      local path = decode(obj.data.path)
       callback({text = path, newline = true, hls = {{'rgFileName', 0, -1}}})
-    end,
-    match = function (data)
+    elseif obj.type == 'match' then
+      local data = obj.data
       -- TODO: support multiline
       local text = decode(data.lines):gsub("([^\n]*).*", "%1")
       local hls = vim.iter(data.submatches):map(function (submatch)
@@ -50,8 +45,8 @@ local function rglines(bufname, callback)
         vim.api.nvim_command('edit +keepjumps\\ normal\\ ' .. pos .. ' ' .. decode(data.path))
       end
       callback({text = text, hls = hls, action = action})
-    end,
-  })
+    end
+  end)
   return process
 end
 
