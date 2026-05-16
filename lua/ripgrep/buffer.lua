@@ -81,7 +81,7 @@ end
 
 function Buffer:spawn()
     local options, pattern = self:parse()
-    local args = vim.tbl_flatten({'--json', options, '--', pattern})
+    local args = vim.iter({'--json', options, '--', pattern}):flatten():totable()
     self.process = spawn_json_producer('rg', args, {
         begin = function (data)
             if data.path.bytes then
